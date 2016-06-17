@@ -25,9 +25,7 @@ public class Game {
     }
 
     public Round newRound() {
-        Timer.start("shuffle", Timer.Priority.LOW);
         deck.shuffle();
-        Timer.stop("shuffle", Timer.Priority.LOW);
         scoreboard.scores.clear();
         currentRound = new Round(scoreboard.players, deck.chooseOne());
         rounds.add(currentRound);
@@ -48,9 +46,7 @@ public class Game {
         Timer.start("round play");
         Player dealer = scoreboard.players[0];
         Player nonDealer = scoreboard.players[1];
-        Timer.start("deal");
         dealer.deal();
-        Timer.stop("deal");
 
         dealer.discard();
         nonDealer.discard();

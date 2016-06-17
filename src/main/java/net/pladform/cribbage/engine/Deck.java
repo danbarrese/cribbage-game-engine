@@ -82,9 +82,7 @@ public class Deck {
     }
 
     public Deck shuffle() {
-        Timer.start("reset dealt cards");
         resetDealtCards();
-        Timer.stop("reset dealt cards");
         Collections.shuffle(cards);
         return this;
     }

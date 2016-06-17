@@ -36,13 +36,11 @@ public class Scoreboard {
     }
 
     public boolean addPoints(int scores, Player player) {
-        Timer.start("add scores");
         CumulativeScore cs = cumulativeScore.get(player);
         boolean gameOver = false;
         if(cs.inc(scores)) {
             gameOver = true;
         }
-        Timer.stop("add scores");
         return gameOver;
     }
 

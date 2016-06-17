@@ -33,7 +33,6 @@ public class GameTest {
 
     @Test
     public void testGames() throws Exception {
-        Timer.start("test run time");
         int gamesPerThread = 100;
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println(String.format("threads: %d", threads));
@@ -54,7 +53,6 @@ public class GameTest {
         }
         es.shutdown();
         es.awaitTermination(1L, TimeUnit.DAYS);
-        Timer.stop("test run time");
         System.out.println(Timer.getStats());
     }
 

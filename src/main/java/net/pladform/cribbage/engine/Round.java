@@ -73,24 +73,18 @@ public class Round {
     }
 
     public boolean isOver() {
-        Timer.start("is round over");
         if (turnCount == maxTurns) {
-            Timer.stop("is round over");
             return true;
         }
         if (pointsRemaining() == 0) {
-            Timer.stop("is round over");
             return true;
         }
         if (turnCount > 1 && lastTurn().player == secondToLastTurn().player) {
-            Timer.stop("is round over");
             return true;
         }
         if (turnCount > 1 && lastTurn().card == Card.NIL && secondToLastTurn().card == Card.NIL) {
-            Timer.stop("is round over");
             return true;
         }
-        Timer.stop("is round over");
         return false;
     }
 

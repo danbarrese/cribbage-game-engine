@@ -36,14 +36,9 @@ public class ScoringTester {
             starterCard = card;
         }
         System.out.println(String.format("STARTER: %s", starterCard));
-        List<Score> scores = Round.scoreEndOfRound(cards, starterCard, false);
+        int points = Round.scoreEndOfRound(cards, starterCard, false);
         System.out.println(cards);
-        System.out.println(scores);
-        int sum = 0;
-        for (Score score : scores) {
-            sum += score.points;
-        }
-        System.out.println(sum);
+        System.out.println(points);
     }
 
 }

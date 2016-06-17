@@ -47,25 +47,12 @@ public class Card implements Comparable<Card> {
         return true;
     }
 
-//    @SafeVarargs
-//    public final boolean isRun(Card... others) {
-//        Card[] coll = Arrays.copyOf(others, others.length + 1);
-//        coll[others.length] = this;
-//        Arrays.sort(coll);
-//        for (int i = 0; i < coll.length - 1; i++) {
-//            if (!coll[i].isAdjacent(coll[i + 1])) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-
     public boolean isJack() {
         return type == Type.JACK;
     }
 
     public String getFormattedValue() {
-        return value == 10 ? "A" : String.valueOf(value);
+        return value == 10 ? "T" : String.valueOf(value);
     }
 
     @Override
@@ -78,13 +65,11 @@ public class Card implements Comparable<Card> {
     }
 
     public enum Type {
-        ACE, _2, _3, _4, _5, _6, _7, _8, _9, _10, JACK, QUEEN, KING;
+        ACE, _2, _3, _4, _5, _6, _7, _8, _9, TEN, JACK, QUEEN, KING;
 
         public static Type fromString(String s) {
             switch (s.substring(0, 1).toUpperCase()) {
-                case "J": return JACK;
-                case "Q": return QUEEN;
-                case "K": return KING;
+                case "A": return ACE;
                 case "1": return ACE;
                 case "2": return _2;
                 case "3": return _3;
@@ -94,8 +79,11 @@ public class Card implements Comparable<Card> {
                 case "7": return _7;
                 case "8": return _8;
                 case "9": return _9;
-                case "10": return _10;
-                case "A": return _10; // TODO: A should return Ace.
+                case "10": return TEN;
+                case "T": return TEN;
+                case "J": return JACK;
+                case "Q": return QUEEN;
+                case "K": return KING;
                 default:
                     throw new IllegalStateException();
             }

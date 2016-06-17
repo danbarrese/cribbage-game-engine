@@ -51,7 +51,7 @@ public class Sum15Test {
                         for (int e = 1; e <= 10; e++) {
                             String hand = Stream.of(a, b, c, d, e)
                                     .sorted()
-                                    .map(i -> i == 10 ? "A" : String.valueOf(i))
+                                    .map(i -> i == 10 ? "T" : String.valueOf(i))
                                     .collect(Collectors.joining());
                             if (handSum15s.containsKey(hand)) {
                                 continue;
@@ -96,7 +96,7 @@ public class Sum15Test {
     public void handle(Set<String> sum15s, Integer... nums) {
         String s = Stream.of(nums)
                 .sorted()
-                .map(i -> i == 10 ? "A" : String.valueOf(i))
+                .map(i -> i == 10 ? "T" : String.valueOf(i))
                 .collect(Collectors.joining());
         sum15s.add(s);
     }
@@ -125,7 +125,7 @@ public class Sum15Test {
             }
             accumulator.add(combo.stream()
                     .sorted()
-                    .map(i -> i == 10 ? "A" : String.valueOf(i))
+                    .map(i -> i == 10 ? "T" : String.valueOf(i))
                     .collect(Collectors.joining())
             );
             return;
@@ -164,7 +164,7 @@ public class Sum15Test {
         if (k == arr.size() - 1) {
             String s = arr.stream()
                     .sorted()
-                    .map(i -> i == 10 ? "A" : String.valueOf(i))
+                    .map(i -> i == 10 ? "T" : String.valueOf(i))
                     .collect(Collectors.joining());
             accumulator.add(s);
         }

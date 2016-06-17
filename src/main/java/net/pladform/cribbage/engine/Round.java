@@ -1,8 +1,16 @@
 package net.pladform.cribbage.engine;
 
 import net.pladform.cribbage.engine.util.Sum15;
+import net.pladform.perf.Timer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Dan Barrese
@@ -17,6 +25,8 @@ public class Round {
     public int cardValueTotal;
     public int maxTurns;
     public Card startCard;
+    public List<State> states;
+    public Map<Player, Integer> finalPoints;
 
     public Round(Player[] players, Card startCard) {
         this.startCard = startCard;
@@ -27,27 +37,34 @@ public class Round {
         cardValueTotal = 0;
         turnCount = 0;
         cardCount = 0;
+        states = new ArrayList<>();
+        finalPoints = new HashMap<>();
     }
 
-    public List<Score> take(Turn turn) {
+    public int take(Turn turn) {
         turns[turnCount++] = turn;
         if (turn.card != Card.NIL) {
             cards[cardCount++] = turn.card;
             cardValueTotal += turn.card.value;
 
-            List<Score> scores = scoreLastTurn(turn.player);
+            int points = scoreLastTurn(turn.player);
+            final int turnPoints = points;
+            finalPoints.compute(turn.player, (player, playersPoints) -> playersPoints == null
+                    ? turnPoints
+                    : playersPoints + turnPoints);
 
             // last card +1, got 31 +2
             if (isOver()) {
                 if (cardValueTotal == 31) {
-                    scores.add(Score.LAST_CARD_31);
+                    points += Score.LAST_CARD_31;
                 } else {
-                    scores.add(Score.LAST_CARD);
+                    points += Score.LAST_CARD;
                 }
             }
-            return scores;
+            states.add(new State(turn.player, startCard, turn.player.hand, cards));
+            return points;
         } else {
-            return Collections.emptyList();
+            return 0;
         }
     }
 
@@ -56,18 +73,24 @@ public class Round {
     }
 
     public boolean isOver() {
+        Timer.start("is round over");
         if (turnCount == maxTurns) {
+            Timer.stop("is round over");
             return true;
         }
         if (pointsRemaining() == 0) {
+            Timer.stop("is round over");
             return true;
         }
         if (turnCount > 1 && lastTurn().player == secondToLastTurn().player) {
+            Timer.stop("is round over");
             return true;
         }
         if (turnCount > 1 && lastTurn().card == Card.NIL && secondToLastTurn().card == Card.NIL) {
+            Timer.stop("is round over");
             return true;
         }
+        Timer.stop("is round over");
         return false;
     }
 
@@ -75,8 +98,8 @@ public class Round {
         return cards[cardCount - 1 - distance];
     }
 
-    public List<Score> scoreEndOfRound(Player player) {
-        List<Score> scores = new ArrayList<>();
+    public int scoreEndOfRound(Player player) {
+        Timer.start("score end of round");
         Set<Card> finalCards = new HashSet<>();
         for (Turn t : turns) {
             if (t != null && t.player == player && t.card != Card.NIL) {
@@ -84,64 +107,65 @@ public class Round {
             }
         }
         finalCards.add(startCard);
-        scores.addAll(scoreEndOfRound(finalCards, startCard, false));
+        int points = scoreEndOfRound(finalCards, startCard, false);
+        final int endOfRoundPoints = points;
+        finalPoints.compute(player, (p, playersPoints) -> playersPoints == null
+                ? endOfRoundPoints
+                : playersPoints + endOfRoundPoints);
+        // TODO: keep track of crib hand separately?
         if (player.dealer) {
-            scores.addAll(scoreCribHand(player));
+            points += scoreCribHand(player);
         }
-        return scores;
+        Timer.stop("score end of round");
+        return points;
     }
 
-    public List<Score> scoreLastTurn(Player player) {
-        List<Score> scores = new ArrayList<>();
+    public int scoreLastTurn(Player player) {
+        int points = 0;
         // 2..4-of-a-kind
         if (cardCount >= 2 && cardFromLast(0).isDouble(cardFromLast(1))) {
             if (cardCount >= 3 && cardFromLast(1).isDouble(cardFromLast(2))) {
                 if (cardCount >= 4 && cardFromLast(2).isDouble(cardFromLast(3))) {
-                    scores.add(Score.FOUR_OF_A_KIND);
+                    points += Score.FOUR_OF_A_KIND;
                 } else {
-                    scores.add(Score.THREE_OF_A_KIND);
+                    points += Score.THREE_OF_A_KIND;
                 }
             } else {
-                scores.add(Score.TWO_OF_A_KIND);
+                points += Score.TWO_OF_A_KIND;
             }
         }
 
         // sum of 15, +2
         if (cardValueTotal == 15) {
-            scores.add(Score.SUM_15);
+            points += Score.SUM_15;
         }
 
         // run of 3..8
         for (int i = 8; i >= 3; i--) {
             if (cardCount >= i) {
                 if (Card.isRun(Arrays.copyOfRange(cards, cardCount - i, cardCount))) {
-                    scores.add(new Score(i));
+                    points += i;
                     break;
                 }
             }
         }
-        return scores;
+        return points;
     }
 
-    @Override
-    public String toString() {
-        return String.format("Round: %s -- StartCard: %s", Arrays.toString(turns), startCard);
-    }
-
-    public static List<Score> scoreEndOfRound(Set<Card> finalCards, Card startCard, boolean isCribHand) {
-        List<Score> scores = new ArrayList<>();
+    public static int scoreEndOfRound(Set<Card> finalCards, Card startCard, boolean isCribHand) {
+        int points = 0;
         Hand hand = new Hand(finalCards);
 
         // SUM_15 = new Score(2);
         int sum15s = Sum15.countSum15sInHand(hand);
         for (int i = 0; i < sum15s; i++) {
-            scores.add(Score.SUM_15);
+            points += Score.SUM_15;
         }
 
         // JACK_SUIT_MATCHES_START_CARD = new Score(1);
         for (Card jack : hand.getJacks()) {
             if (startCard.suit == jack.suit) {
-                scores.add(Score.JACK_SUIT_MATCHES_START_CARD);
+                points += Score.JACK_SUIT_MATCHES_START_CARD;
             }
         }
 
@@ -153,14 +177,14 @@ public class Round {
             if (i + 2 < handCards.length && Card.isRun(Arrays.copyOfRange(handCards, i, i + 3))) {
                 if (i + 3 < handCards.length && Card.isRun(Arrays.copyOfRange(handCards, i, i + 4))) {
                     if (i + 4 < handCards.length && Card.isRun(Arrays.copyOfRange(handCards, i, i + 5))) {
-                        scores.add(Score.RUN_OF_5);
+                        points += Score.RUN_OF_5;
                         break;
                     } else {
-                        scores.add(Score.RUN_OF_4);
+                        points += Score.RUN_OF_4;
                         break;
                     }
                 } else {
-                    scores.add(Score.RUN_OF_3);
+                    points += Score.RUN_OF_3;
                     break;
                 }
             }
@@ -173,21 +197,7 @@ public class Round {
         for (Card card : hand.cards) {
             cardCounts.compute(card.type, (cardd, count) -> count == null ? 1 : count + 1);
         }
-        cardCounts.forEach((card, count) -> {
-            switch (count) {
-                case 2:
-                    scores.add(Score.TWO_OF_A_KIND);
-                    break;
-                case 3:
-                    scores.add(Score.THREE_OF_A_KIND);
-                    break;
-                case 4:
-                    scores.add(Score.FOUR_OF_A_KIND);
-                    break;
-                default:
-                    break;
-            }
-        });
+        points += cardCounts.values().stream().mapToInt(i -> Score.ofAKind(i)).sum();
 
         // FLUSH = new Score(4);
         // FLUSH_PLUS_START_CARD = new Score(5);
@@ -207,16 +217,16 @@ public class Round {
         }
         if (flush && isCribHand && startCard.suit == suit) {
             // TODO: crib hand flush is 4 points or 5?
-            scores.add(Score.FLUSH_PLUS_START_CARD);
+            points += Score.FLUSH_PLUS_START_CARD;
         } else if (flush) {
             if (startCard.suit == suit) {
-                scores.add(Score.FLUSH_PLUS_START_CARD);
+                points += Score.FLUSH_PLUS_START_CARD;
             } else {
-                scores.add(Score.FLUSH);
+                points += Score.FLUSH;
             }
         }
 
-        return scores;
+        return points;
     }
 
     // ---------------------------------
@@ -231,11 +241,32 @@ public class Round {
         return turns[turnCount - 2];
     }
 
-    private List<Score> scoreCribHand(Player player) {
+    private int scoreCribHand(Player player) {
         Set<Card> finalCards = new HashSet<>();
         finalCards.addAll(player.crib.cards);
         finalCards.add(startCard);
         return scoreEndOfRound(finalCards, startCard, true);
+    }
+
+    // ---------------------------------
+    // inner classes
+    // ---------------------------------
+
+    public class State {
+        Player player;
+        String state;
+        public State(Player player, Card starterCard, Hand playersHand, Card[] cardsPlayed) {
+            this.player = player;
+            String starterCardState = starterCard.toString();
+            String cardsPlayedState = Arrays.stream(cardsPlayed)
+                    .filter(card -> card != null && card != Card.NIL)
+                    .map(Card::toString)
+                    .collect(Collectors.joining());
+            String playersHandState = playersHand.cards.stream()
+                    .map(Card::toString)
+                    .collect(Collectors.joining());
+            this.state = String.format("%s%s:%s:%s", player.dealer ? "*" : "", starterCardState, cardsPlayedState, playersHandState);
+        }
     }
 
 }

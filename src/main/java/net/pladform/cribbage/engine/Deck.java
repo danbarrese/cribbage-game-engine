@@ -31,7 +31,7 @@ public class Deck {
         cards.add(new Card(7, Card.Type._7, Suit.CLUBS));
         cards.add(new Card(8, Card.Type._8, Suit.CLUBS));
         cards.add(new Card(9, Card.Type._9, Suit.CLUBS));
-        cards.add(new Card(10, Card.Type._10, Suit.CLUBS));
+        cards.add(new Card(10, Card.Type.TEN, Suit.CLUBS));
         cards.add(new Card(10, Card.Type.JACK, Suit.CLUBS));
         cards.add(new Card(10, Card.Type.QUEEN, Suit.CLUBS));
         cards.add(new Card(10, Card.Type.KING, Suit.CLUBS));
@@ -45,7 +45,7 @@ public class Deck {
         cards.add(new Card(7, Card.Type._7, Suit.DIAMONS));
         cards.add(new Card(8, Card.Type._8, Suit.DIAMONS));
         cards.add(new Card(9, Card.Type._9, Suit.DIAMONS));
-        cards.add(new Card(10, Card.Type._10, Suit.DIAMONS));
+        cards.add(new Card(10, Card.Type.TEN, Suit.DIAMONS));
         cards.add(new Card(10, Card.Type.JACK, Suit.DIAMONS));
         cards.add(new Card(10, Card.Type.QUEEN, Suit.DIAMONS));
         cards.add(new Card(10, Card.Type.KING, Suit.DIAMONS));
@@ -59,7 +59,7 @@ public class Deck {
         cards.add(new Card(7, Card.Type._7, Suit.SPADES));
         cards.add(new Card(8, Card.Type._8, Suit.SPADES));
         cards.add(new Card(9, Card.Type._9, Suit.SPADES));
-        cards.add(new Card(10, Card.Type._10, Suit.SPADES));
+        cards.add(new Card(10, Card.Type.TEN, Suit.SPADES));
         cards.add(new Card(10, Card.Type.JACK, Suit.SPADES));
         cards.add(new Card(10, Card.Type.QUEEN, Suit.SPADES));
         cards.add(new Card(10, Card.Type.KING, Suit.SPADES));
@@ -73,7 +73,7 @@ public class Deck {
         cards.add(new Card(7, Card.Type._7, Suit.HEARTS));
         cards.add(new Card(8, Card.Type._8, Suit.HEARTS));
         cards.add(new Card(9, Card.Type._9, Suit.HEARTS));
-        cards.add(new Card(10, Card.Type._10, Suit.HEARTS));
+        cards.add(new Card(10, Card.Type.TEN, Suit.HEARTS));
         cards.add(new Card(10, Card.Type.JACK, Suit.HEARTS));
         cards.add(new Card(10, Card.Type.QUEEN, Suit.HEARTS));
         cards.add(new Card(10, Card.Type.KING, Suit.HEARTS));

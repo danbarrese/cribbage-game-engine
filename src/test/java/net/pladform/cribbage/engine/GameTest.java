@@ -3,6 +3,8 @@ package net.pladform.cribbage.engine;
 import net.pladform.perf.Timer;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,14 +26,15 @@ public class GameTest {
         scoreboard.setDealer(dan);
         Timer.stop("game setup");
         Timer.start("game play");
-        game.play();
+        Map<String, List<Integer>> stats = game.play();
+        System.out.println(stats);
         Timer.stop("game play");
     }
 
     @Test
     public void testGames() throws Exception {
         Timer.start("test run time");
-        int gamesPerThread = 10_000;
+        int gamesPerThread = 100;
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println(String.format("threads: %d", threads));
         ExecutorService es = Executors.newFixedThreadPool(threads);

@@ -1,6 +1,12 @@
 package net.pladform.cribbage.engine;
 
-import java.util.*;
+import net.pladform.perf.Timer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Dan Barrese
@@ -29,14 +35,14 @@ public class Scoreboard {
         }
     }
 
-    public boolean addScores(List<Score> scores, Player player) {
+    public boolean addPoints(int scores, Player player) {
+        Timer.start("add scores");
         CumulativeScore cs = cumulativeScore.get(player);
         boolean gameOver = false;
-        for (Score score : scores) {
-            if(cs.inc(score.points)) {
-                gameOver = true;
-            }
+        if(cs.inc(scores)) {
+            gameOver = true;
         }
+        Timer.stop("add scores");
         return gameOver;
     }
 

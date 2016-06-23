@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Dan Barrese
@@ -34,46 +35,87 @@ public class Game {
 
     public Map<String, List<Integer>> play() {
         Map<String, List<Integer>> stats = new HashMap<>();
-        _play(stats);
+        playNext(stats);
         return stats;
     }
 
-    private void _play(Map<String, List<Integer>> stats) {
+    private void playNext(Map<String, List<Integer>> stats) {
         Timer.start("new round");
         newRound();
         Timer.stop("new round");
 
         Timer.start("round play");
         Player dealer = scoreboard.players[0];
-        Player nonDealer = scoreboard.players[1];
         dealer.deal();
+
+        play(stats);
+    }
+
+//    public Map<String, List<Integer>> playRounds(Player player, Set<Card> playerHand) {
+//        Map<String, List<Integer>> stats = new HashMap<>();
+//        Timer.start("new round");
+//        newRound(); // TODO: start card should not be chosen yet!
+//        Timer.stop("new round");
+//
+//        Timer.start("round play");
+//        Player dealer = scoreboard.players[0];
+//        Player nonDealer = scoreboard.players[1];
+//        if (dealer == player) {
+//            dealer.hand.cards = playerHand;
+//            nonDealer.hand.cards = deck.deal(6);
+//        } else {
+//            dealer.hand.cards = deck.deal(6);
+//            nonDealer.hand.cards = playerHand;
+//        }
+//
+//        play(stats);
+//        return stats;
+//    }
+
+    private void play(Map<String, List<Integer>> stats) {
+        Player dealer = scoreboard.players[0];
+        Player nonDealer = scoreboard.players[1];
 
         dealer.discard();
         nonDealer.discard();
 
-        while (true) {
-            int points;
-            Card nonDealerCard = nonDealer.playCard();
-            points = currentRound.take(new Turn(nonDealer, nonDealerCard));
-            if (scoreboard.addPoints(points, nonDealer)) {
-                break;
-            }
-            if (currentRound.isOver()) {
-                break;
-            }
+        if (currentRound.startCard.isJack()) {
+            scoreboard.addPoints(2, dealer);
+        }
 
-            Card dealerCard = dealer.playCard();
-            points = currentRound.take(new Turn(dealer, dealerCard));
-            if (scoreboard.addPoints(points, dealer)) {
-                break;
-            }
-            if (currentRound.isOver()) {
-                break;
+        if (!scoreboard.isDone()) {
+            while (true) {
+                int points;
+                Card nonDealerCard = nonDealer.playCard();
+                points = currentRound.take(new Turn(nonDealer, nonDealerCard));
+                stats.putIfAbsent(currentRound.currentState.state, new ArrayList<>());
+                if (scoreboard.addPoints(points, nonDealer)) {
+                    break;
+                }
+                if (currentRound.isOver()) {
+                    break;
+                }
+
+                Card dealerCard = dealer.playCard();
+                points = currentRound.take(new Turn(dealer, dealerCard));
+                stats.putIfAbsent(currentRound.currentState.state, new ArrayList<>());
+                if (scoreboard.addPoints(points, dealer)) {
+                    break;
+                }
+                if (currentRound.isOver()) {
+                    break;
+                }
             }
         }
         Timer.stop("round play");
+        scoreRound(stats);
+    }
 
+    private void scoreRound(Map<String, List<Integer>> stats) {
         Timer.start("round scoring");
+        Player dealer = scoreboard.players[0];
+        Player nonDealer = scoreboard.players[1];
+
         // score non-dealer's hand
         scoreboard.addPoints(currentRound.scoreEndOfRound(nonDealer), nonDealer);
 
@@ -84,7 +126,7 @@ public class Game {
 
         currentRound.states.forEach(state -> {
             stats.putIfAbsent(state.state, new ArrayList<>());
-            stats.get(state.state).add(currentRound.finalPoints.get(state.player));
+            stats.get(state.state).add(currentRound.awardedPoints.get(state.player));
         });
 
         Timer.stop("round scoring");
@@ -92,7 +134,7 @@ public class Game {
             // game over
         } else {
             scoreboard.setDealer(nonDealer);
-            play();
+            playNext(stats);
         }
     }
 

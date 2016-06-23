@@ -18,92 +18,86 @@ import java.util.stream.Collectors;
 public class Round {
 
     public Player[] players;
-    public Turn[] turns;
-    public Card[] cards;
-    public int turnCount;
-    public int cardCount;
-    public int cardValueTotal;
-    public int maxTurns;
+    public Player dealer;
+    public Player nonDealer;
     public Card startCard;
     public List<State> states;
-    public Map<Player, Integer> finalPoints;
+    public State currentState;
+    public Map<Player, Integer> awardedPoints;
+    public List<RoundStack> stacks;
+    public RoundStack currentStack;
 
     public Round(Player[] players, Card startCard) {
+        dealer = players[0];
+        nonDealer = players[1];
         this.startCard = startCard;
-        this.maxTurns = players.length * 4; // magic number
         this.players = players;
-        this.turns = new Turn[maxTurns];
-        this.cards = new Card[maxTurns];
-        cardValueTotal = 0;
-        turnCount = 0;
-        cardCount = 0;
         states = new ArrayList<>();
-        finalPoints = new HashMap<>();
+        currentState = null;
+        awardedPoints = new HashMap<>();
+        stacks = new ArrayList<>(3);
+        stacks.add(new RoundStack());
+        currentStack = stacks.get(0);
+    }
+
+//    public List<State> play() {
+//        Player dealer = players[0].dealer ? players[0] : players[1];
+//        Player nonDealer = players[0].dealer ? players[1] : players[0];
+//        while (true) {
+//            int points;
+//            Card nonDealerCard = nonDealer.playCard();
+//            points = take(new Turn(nonDealer, nonDealerCard));
+//            if (isOver()) {
+//                break;
+//            }
+//
+//            Card dealerCard = dealer.playCard();
+//            points = take(new Turn(dealer, dealerCard));
+//            if (isOver()) {
+//                break;
+//            }
+//        }
+//        int nonDealerPoints = scoreEndOfRound(nonDealer);
+//        int dealerPoints = scoreEndOfRound(dealer);
+//        return states;
+//    }
+
+    private List<Card> allCardsThisRound() {
+        List<Card> inOrder = new ArrayList<>();
+        stacks.forEach(stack -> inOrder.addAll(stack.cards));
+        return inOrder;
     }
 
     public int take(Turn turn) {
-        turns[turnCount++] = turn;
-        if (turn.card != Card.NIL) {
-            cards[cardCount++] = turn.card;
-            cardValueTotal += turn.card.value;
-
-            int points = scoreLastTurn(turn.player);
-            final int turnPoints = points;
-            finalPoints.compute(turn.player, (player, playersPoints) -> playersPoints == null
-                    ? turnPoints
-                    : playersPoints + turnPoints);
-
-            // last card +1, got 31 +2
-            if (isOver()) {
-                if (cardValueTotal == 31) {
-                    points += Score.LAST_CARD_31;
-                } else {
-                    points += Score.LAST_CARD;
-                }
-            }
-            states.add(new State(turn.player, startCard, turn.player.hand, cards));
-            return points;
-        } else {
-            return 0;
+        int score = currentStack.take(turn);
+        currentState = new State(turn.player, startCard, turn.player.hand, allCardsThisRound());
+        states.add(currentState);
+        System.out.println(currentState);
+        if (currentStack.isOver() && !this.isOver()) {
+            currentStack = new RoundStack();
+            stacks.add(currentStack);
         }
-    }
-
-    public int pointsRemaining() {
-        return 31 - cardValueTotal;
+        return score;
     }
 
     public boolean isOver() {
-        if (turnCount == maxTurns) {
-            return true;
-        }
-        if (pointsRemaining() == 0) {
-            return true;
-        }
-        if (turnCount > 1 && lastTurn().player == secondToLastTurn().player) {
-            return true;
-        }
-        if (turnCount > 1 && lastTurn().card == Card.NIL && secondToLastTurn().card == Card.NIL) {
-            return true;
-        }
-        return false;
-    }
-
-    private Card cardFromLast(int distance) {
-        return cards[cardCount - 1 - distance];
+        return dealer.hand.isEmpty() && nonDealer.hand.isEmpty();
     }
 
     public int scoreEndOfRound(Player player) {
         Timer.start("score end of round");
         Set<Card> finalCards = new HashSet<>();
-        for (Turn t : turns) {
-            if (t != null && t.player == player && t.card != Card.NIL) {
-                finalCards.add(t.card);
+        for (RoundStack stack : stacks) {
+            for (Turn t : stack.turns) {
+                if (t != null && t.player == player && t.card != Card.NIL) {
+                    finalCards.add(t.card);
+                }
             }
         }
         finalCards.add(startCard);
         int points = scoreEndOfRound(finalCards, startCard, false);
         final int endOfRoundPoints = points;
-        finalPoints.compute(player, (p, playersPoints) -> playersPoints == null
+        awardedPoints.compute(player, (p, playersPoints) -> playersPoints == null
                 ? endOfRoundPoints
                 : playersPoints + endOfRoundPoints);
         // TODO: keep track of crib hand separately?
@@ -111,38 +105,6 @@ public class Round {
             points += scoreCribHand(player);
         }
         Timer.stop("score end of round");
-        return points;
-    }
-
-    public int scoreLastTurn(Player player) {
-        int points = 0;
-        // 2..4-of-a-kind
-        if (cardCount >= 2 && cardFromLast(0).isDouble(cardFromLast(1))) {
-            if (cardCount >= 3 && cardFromLast(1).isDouble(cardFromLast(2))) {
-                if (cardCount >= 4 && cardFromLast(2).isDouble(cardFromLast(3))) {
-                    points += Score.FOUR_OF_A_KIND;
-                } else {
-                    points += Score.THREE_OF_A_KIND;
-                }
-            } else {
-                points += Score.TWO_OF_A_KIND;
-            }
-        }
-
-        // sum of 15, +2
-        if (cardValueTotal == 15) {
-            points += Score.SUM_15;
-        }
-
-        // run of 3..8
-        for (int i = 8; i >= 3; i--) {
-            if (cardCount >= i) {
-                if (Card.isRun(Arrays.copyOfRange(cards, cardCount - i, cardCount))) {
-                    points += i;
-                    break;
-                }
-            }
-        }
         return points;
     }
 
@@ -223,17 +185,14 @@ public class Round {
         return points;
     }
 
+    @Override
+    public String toString() {
+        return "Round:" + stacks;
+    }
+
     // ---------------------------------
     // private methods
     // ---------------------------------
-
-    private Turn lastTurn() {
-        return turns[turnCount - 1];
-    }
-
-    private Turn secondToLastTurn() {
-        return turns[turnCount - 2];
-    }
 
     private int scoreCribHand(Player player) {
         Set<Card> finalCards = new HashSet<>();
@@ -249,10 +208,11 @@ public class Round {
     public class State {
         Player player;
         String state;
-        public State(Player player, Card starterCard, Hand playersHand, Card[] cardsPlayed) {
+
+        public State(Player player, Card starterCard, Hand playersHand, List<Card> cardsPlayed) {
             this.player = player;
             String starterCardState = starterCard.toString();
-            String cardsPlayedState = Arrays.stream(cardsPlayed)
+            String cardsPlayedState = cardsPlayed.stream()
                     .filter(card -> card != null && card != Card.NIL)
                     .map(Card::toString)
                     .collect(Collectors.joining());
@@ -260,6 +220,11 @@ public class Round {
                     .map(Card::toString)
                     .collect(Collectors.joining());
             this.state = String.format("%s%s:%s:%s", player.dealer ? "*" : "", starterCardState, cardsPlayedState, playersHandState);
+        }
+
+        @Override
+        public String toString() {
+            return state;
         }
     }
 

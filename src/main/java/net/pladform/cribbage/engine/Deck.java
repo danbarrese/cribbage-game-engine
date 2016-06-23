@@ -83,8 +83,21 @@ public class Deck {
 
     public Deck shuffle() {
         resetDealtCards();
-        Collections.shuffle(cards);
         return this;
+    }
+
+    public Card select(Card.Type type, Suit suit) {
+        for (int i = 0; i < cards.size(); i++) {
+            if (!remainingIndexes.contains(i)) {
+                continue;
+            }
+            Card c = cards.get(i);
+            if (c.type == type && c.suit == suit) {
+                remainingIndexes.remove(i);
+                return c;
+            }
+        }
+        throw new IllegalArgumentException("cannot select card because it has already been dealt");
     }
 
     public Card chooseOne() {

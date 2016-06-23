@@ -54,6 +54,10 @@ public class Hand {
                 .collect(Collectors.toSet());
     }
 
+    public boolean isEmpty() {
+        return cards.isEmpty();
+    }
+
     @Override
     public String toString() {
         return cards.toString();

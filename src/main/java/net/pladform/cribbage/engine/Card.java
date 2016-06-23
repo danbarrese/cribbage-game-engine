@@ -1,6 +1,8 @@
 package net.pladform.cribbage.engine;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Dan Barrese
@@ -35,6 +37,16 @@ public class Card implements Comparable<Card> {
 
     public boolean isAdjacent(Card other) {
         return Math.abs(this.type.ordinal() - other.type.ordinal()) == 1;
+    }
+
+    public static boolean isRun(List<Card> coll) {
+        Collections.sort(coll);
+        for (int i = 0; i < coll.size() - 1; i++) {
+            if (!coll.get(i).isAdjacent(coll.get(i + 1))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static boolean isRun(Card... coll) {

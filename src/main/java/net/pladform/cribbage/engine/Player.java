@@ -25,7 +25,7 @@ public class Player implements Comparable<Player> {
     }
 
     public Card playCard() {
-        return hand.play(game.currentRound.pointsRemaining());
+        return hand.play(game.currentRound.currentStack.pointsRemaining());
     }
 
     public void discard() {
